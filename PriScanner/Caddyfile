@@ -1,0 +1,5 @@
+# Zamień na swoją domenę. Caddy sam wyrobi certyfikat Let's Encrypt.
+# Streamlit używa WebSocketów — reverse_proxy obsłuży je automatycznie.
+pricemon.twojadomena.pl {
+    reverse_proxy pricemon:8501
+}

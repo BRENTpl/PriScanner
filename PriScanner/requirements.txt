@@ -1,0 +1,7 @@
+streamlit>=1.39
+streamlit-autorefresh>=1.0.1
+pandas>=2.0
+requests>=2.31
+beautifulsoup4>=4.12
+curl_cffi>=0.7          # fingerprint TLS/JA3 Chrome — omija DataDome (Allegro itd.)
+playwright>=1.40        # render JS dla AliExpress i stron blokowanych

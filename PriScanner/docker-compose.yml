@@ -1,0 +1,30 @@
+services:
+  pricemon:
+    build: .
+    container_name: pricemon
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    # Bez reverse proxy odkomentuj, by wystawić bezpośrednio (HTTP):
+    # ports:
+    #   - "8501:8501"
+    expose:
+      - "8501"
+
+  # Automatyczny HTTPS (Let's Encrypt). Ustaw domenę w Caddyfile.
+  # Usuń tę usługę, jeśli masz własny nginx/Traefik.
+  caddy:
+    image: caddy:2-alpine
+    container_name: pricemon-caddy
+    restart: unless-stopped
+    depends_on: [pricemon]
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
