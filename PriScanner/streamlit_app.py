@@ -340,8 +340,9 @@ def sidebar(eng: Engine):
         f"produktów: {len(products)}")
 
     # auto-odświeżanie
-    auto = st.sidebar.checkbox("Auto-odświeżanie (5 s)", value=True,
-                               help="Odświeża widok, by pokazać postęp pobierania w tle.")
+    auto = st.sidebar.checkbox("Auto-odświeżanie podczas pobierania", value=True,
+                               help="Odświeża widok co 2 s tylko wtedy, gdy w tle "
+                                    "trwa pobieranie. Gdy cicho — strona stoi.")
     return auto
 
 
@@ -351,10 +352,14 @@ def main():
     eng = get_engine()
     auto = sidebar(eng)
 
-    if auto and _HAS_AUTOREFRESH:
-        st_autorefresh(interval=5000, key="poll")
-
     products = eng.store.all()
+    busy = eng.any_fetching()
+
+    # Odświeżamy widok TYLKO podczas aktywności (pobieranie/porównywarka),
+    # żeby pokazać postęp. Gdy cicho — strona stoi, żadnego migania.
+    if auto and _HAS_AUTOREFRESH and busy:
+        st_autorefresh(interval=2000, key="poll")
+
     # ulubione na górze, reszta w kolejności z bazy
     products.sort(key=lambda p: (not p.favorite,))
 

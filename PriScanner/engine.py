@@ -54,6 +54,7 @@ class Engine:
                                             thread_name_prefix="fetch")
         self.default_interval = default_interval_hours
         self._inflight: set[str] = set()
+        self._compares = 0
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self.last_run = None          # kiedy scheduler ostatnio przeleciał
@@ -81,6 +82,12 @@ class Engine:
         with self._lock:
             return url in self._inflight
 
+    def any_fetching(self) -> bool:
+        """Czy cokolwiek dzieje się w tle (pobranie lub porównywarka).
+        UI używa tego, by odświeżać widok TYLKO podczas aktywności."""
+        with self._lock:
+            return bool(self._inflight) or self._compares > 0
+
     def submit_fetch(self, url, also_compare=True):
         """Zleca pobranie w tle. Stan 'pobieram…' pokazujemy z pamięci
         (is_fetching) — nie utrwalamy go w bazie, by po restarcie serwera nic
@@ -96,7 +103,16 @@ class Engine:
             self.submit_fetch(p.url, also_compare=is_eu_amazon(p.url) and self._alts_stale(p))
 
     def submit_compare(self, url):
-        self.executor.submit(self.do_compare, url)
+        with self._lock:
+            self._compares += 1
+        self.executor.submit(self._compare_worker, url)
+
+    def _compare_worker(self, url):
+        try:
+            self.do_compare(url)
+        finally:
+            with self._lock:
+                self._compares -= 1
 
     # ------------------------------------------------------------- workers --
     def _fetch_worker(self, url, also_compare):
